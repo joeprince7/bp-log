@@ -111,9 +111,11 @@
 
   <div class="listhead">
     <h2>紀錄</h2>
-    <div style="display:flex; gap:8px">
+    <div style="display:flex; gap:6px; flex-wrap:wrap; justify-content:flex-end">
       <button class="btn" id="limitBtn">標準</button>
-      <button class="btn solid" id="exportBtn">輸出檔案 (CSV)</button>
+      <button class="btn" id="importBtn">輸入檔案</button>
+      <button class="btn solid" id="exportBtn">輸出檔案</button>
+      <input type="file" id="importFile" accept=".csv,.txt,text/csv,text/plain" hidden>
     </div>
   </div>
   <div id="list"></div>
@@ -361,6 +363,50 @@ document.getElementById('sOk').onclick = ()=>{
   limits = L; saveLimits();
   sModal.classList.remove('show');
   renderList();
+};
+
+// 輸入 CSV（可讀本程式輸出的檔案，或 Calc 另存的 CSV）
+function parseDate(s){
+  s = s.trim().replace(/["']/g,'');
+  let m = s.match(/^(\d{2}|\d{4})[\/\-.](\d{1,2})[\/\-.](\d{1,2})$/);
+  if(!m) return null;
+  let y = m[1].length===2 ? '20'+m[1] : m[1];
+  const mo=+m[2], d=+m[3];
+  if(mo<1||mo>12||d<1||d>31) return null;
+  return y+'-'+pad2(mo)+'-'+pad2(d);
+}
+function parseTime(s){
+  const m = s.trim().replace(/["']/g,'').match(/^(\d{1,2}):(\d{2})(:\d{2})?$/);
+  if(!m || +m[1]>23 || +m[2]>59) return null;
+  return pad2(+m[1])+':'+m[2];
+}
+const importFile = document.getElementById('importFile');
+document.getElementById('importBtn').onclick = ()=>{ importFile.value=''; importFile.click(); };
+importFile.onchange = ()=>{
+  const f = importFile.files[0]; if(!f) return;
+  const rd = new FileReader();
+  rd.onload = ()=>{
+    const lines = String(rd.result).replace(/^﻿/,'').split(/\r?\n/);
+    const seen = new Set(records.map(r=>[r.date,r.time,r.sys,r.dia,r.pul].join('|')));
+    let added=0, dup=0, bad=0, first=true;
+    for(const line of lines){
+      if(!line.trim()) continue;
+      const isFirst = first; first = false;
+      const c = line.split(/[,;\t]/);
+      const ok = c.length>=5;
+      const date=ok&&parseDate(c[0]), time=ok&&parseTime(c[1]);
+      const sys=ok?parseInt(c[2]):NaN, dia=ok?parseInt(c[3]):NaN, pul=ok?parseInt(c[4]):NaN;
+      if(!date || !time || [sys,dia,pul].some(isNaN)){ if(!isFirst) bad++; continue; }   // 第一行標題略過
+      const key=[date,time,sys,dia,pul].join('|');
+      if(seen.has(key)){ dup++; continue; }
+      seen.add(key);
+      records.push({ id:Date.now()+''+Math.random().toString(36).slice(2,6), date, time, sys, dia, pul });
+      added++;
+    }
+    save(); renderList();
+    alert(`已加入 ${added} 筆` + (dup?`\n重複略過 ${dup} 筆`:'') + (bad?`\n無法讀取 ${bad} 行`:''));
+  };
+  rd.readAsText(f);
 };
 
 // 輸出 CSV（UTF-8 含 BOM，LibreOffice Calc 可直接開啟）
