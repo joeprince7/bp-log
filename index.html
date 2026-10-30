@@ -230,6 +230,7 @@ function press(k){
     vals[active] = vals[active].slice(0,-1);
   } else if(k==='cancel'){
     vals=['','','','']; active=0;
+    hidePad(); return;
   } else if(k==='enter'){
     submit(); return;
   }
@@ -448,7 +449,17 @@ setInterval(()=>{ if(!vals[3]) renderFields(); }, 30000);
 
 renderFields(); renderList();
 // 離線可用
-if('serviceWorker' in navigator){ window.addEventListener('load', ()=> navigator.serviceWorker.register('sw.js').catch(()=>{})); }
+if('serviceWorker' in navigator){
+  window.addEventListener('load', ()=> navigator.serviceWorker.register('sw.js', {updateViaCache:'none'})
+    .then(reg => reg.update()).catch(()=>{}));
+  // 新版離線程式生效時自動重新載入一次
+  let reloaded = false;
+  navigator.serviceWorker.addEventListener('controllerchange', ()=>{ if(!reloaded){ reloaded = true; location.reload(); } });
+}
+// App 從背景切回前景時檢查新版
+document.addEventListener('visibilitychange', ()=>{
+  if(document.visibilityState==='visible' && navigator.serviceWorker) navigator.serviceWorker.getRegistration().then(r=>r&&r.update());
+});
 </script>
 </body>
 </html>
