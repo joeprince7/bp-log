@@ -73,6 +73,8 @@
   td .edit{padding:4px 8px; font-size:13px}
   .empty{text-align:center; color:var(--muted); padding:20px; background:var(--card); border-radius:12px; font-size:14px}
 
+  .credit{color:var(--muted); font-size:12px; font-weight:normal; margin-left:4px}
+
   .modal-bg{position:fixed; inset:0; background:rgba(0,0,0,.45); display:none; align-items:center; justify-content:center; padding:16px; z-index:10}
   .modal-bg.show{display:flex}
   .modal{background:var(--card); border-radius:14px; padding:18px; width:100%; max-width:360px}
@@ -88,7 +90,7 @@
 </head>
 <body>
 <div class="wrap">
-  <h1>血壓紀錄 <span class="today" id="today"></span></h1>
+  <h1><span>血壓紀錄 <span class="credit">by Joeprince</span></span> <span class="today" id="today"></span></h1>
 
   <div class="fields" id="fields">
     <div class="field" data-i="0"><label>收縮壓</label><div class="val"></div></div>
